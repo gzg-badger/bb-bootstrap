@@ -39,15 +39,23 @@ if printf '%s' "$probe_err" | grep -qi 'operation not permitted'; then
 EOF
     sleep 3
     open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles" 2>/dev/null || true
-    fail "Re-run after granting Full Disk Access."
+    fail "Quit Terminal (Cmd+Q), reopen, and re-run after granting Full Disk Access."
 fi
 ok "Terminal can read Google Drive"
 
 # ── W&B account mounted ─────────────────────────────────────────────────────
 
-WB_DRIVE=$(ls -d "$CS"/GoogleDrive-*wolfandbadger.com* 2>/dev/null | head -1 || true)
-[[ -n "$WB_DRIVE" ]] || fail "No @wolfandbadger.com Drive account mounted. Sign in via the Drive menu-bar icon, then re-run."
-ok "Found @wolfandbadger.com account: $(basename "$WB_DRIVE")"
+# Glob-into-array — bash 3.2 safe. With no match, bash leaves the literal
+# pattern as one element; [[ -d ]] catches that since the literal won't exist.
+WB_DRIVES=("$CS"/GoogleDrive-*wolfandbadger.com*)
+[[ -d "${WB_DRIVES[0]}" ]] || fail "No @wolfandbadger.com Drive account mounted. Sign in via the Drive menu-bar icon, then re-run."
+WB_DRIVE="${WB_DRIVES[0]}"
+
+if [[ "${#WB_DRIVES[@]}" -gt 1 ]]; then
+    warn "Multiple @wolfandbadger.com accounts mounted (${#WB_DRIVES[@]}) — using $(basename "$WB_DRIVE"). Sign out of any wrong ones in Drive's menu-bar icon, then re-run."
+else
+    ok "Found @wolfandbadger.com account: $(basename "$WB_DRIVE")"
+fi
 
 SHARED="$WB_DRIVE/Shared drives/AI Badger Buddy"
 if [[ ! -d "$SHARED" ]]; then
@@ -87,10 +95,9 @@ ok "Shared drive synced (BB:CC v${BBCC_VERSION})"
 
 INSTALLER="$SHARED/setup/install.sh"
 LIB="$SHARED/setup/lib.sh"
-[[ -f "$INSTALLER" ]] || fail "install.sh not found on Drive — partial sync? Wait for the green tick on AI Badger Buddy and re-run."
-[[ -s "$INSTALLER" ]] || fail "install.sh is a Drive placeholder, not synced. Toggle 'Available offline' and wait."
-[[ -f "$LIB" ]]       || fail "lib.sh not found on Drive — partial sync? Wait and re-run."
-[[ -s "$LIB" ]]       || fail "lib.sh is a Drive placeholder, not synced. Toggle 'Available offline' and wait."
+# -s catches both missing and 0-byte (placeholder) cases — same fix either way.
+[[ -s "$INSTALLER" ]] || fail "install.sh missing or not synced yet — wait for the green tick on AI Badger Buddy and re-run."
+[[ -s "$LIB" ]]       || fail "lib.sh missing or not synced yet — wait and re-run."
 ok "Installer + lib found on Drive"
 
 printf '\n%sHanding off to BB:CC installer…%s\n\n' "$BLD" "$NC"

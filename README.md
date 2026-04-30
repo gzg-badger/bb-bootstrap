@@ -10,7 +10,7 @@ Solves a chicken-and-egg: the BB:CC installer lives on Google Drive, but a fresh
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/gzg-badger/bb-bootstrap/main/v1/bootstrap.sh)"
 ```
 
-If macOS Full Disk Access isn't granted to Terminal, the bootstrap opens System Settings to the right pane and tells the user what to do. After fix, re-paste the command.
+If macOS Full Disk Access isn't granted to Terminal, the bootstrap opens System Settings to the right pane and tells the user what to do. After granting access, **quit Terminal (Cmd+Q)**, reopen it, and re-paste the command — TCC grants only apply to fresh process trees.
 
 ## Versioning
 
@@ -23,6 +23,6 @@ If macOS Full Disk Access isn't granted to Terminal, the bootstrap opens System 
 2. Probes `~/Library/CloudStorage` readability — opens FDA pane on EPERM
 3. Locates the `@wolfandbadger.com` Drive account
 4. Checks the `AI Badger Buddy` shared drive is visible + offline
-5. Copies `setup/install.sh` to a temp dir and `exec`s it
+5. Exec's `setup/install.sh` in place from Drive (its sibling `lib.sh` resolves correctly via `$SCRIPT_DIR`)
 
 The bootstrap contains no secrets — its job is purely to detect failure modes before the real installer hits them silently.
