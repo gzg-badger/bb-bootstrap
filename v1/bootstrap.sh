@@ -80,17 +80,18 @@ fi
 BBCC_VERSION=$(tr -d '[:space:]' <"$VFILE")
 ok "Shared drive synced (BB:CC v${BBCC_VERSION})"
 
-# ── Stage installer to /tmp ─────────────────────────────────────────────────
-# Copying decouples bootstrap from any future Drive sync blips during install.
+# ── Hand off to installer ───────────────────────────────────────────────────
+# install.sh sources lib.sh via $SCRIPT_DIR (its own location), so we run it
+# in place on Drive rather than copying. install.sh reads from Drive heavily
+# throughout install anyway — staging to /tmp wouldn't decouple meaningfully.
 
 INSTALLER="$SHARED/setup/install.sh"
-[[ -f "$INSTALLER" ]] || fail "install.sh not found at $INSTALLER. Drive may be partially synced — wait and re-run."
-
-STAGE_DIR=$(mktemp -d -t bbcc-bootstrap)
-STAGED="$STAGE_DIR/install.sh"
-cp "$INSTALLER" "$STAGED"
-chmod u+w "$STAGED"
-ok "Staged installer to $STAGED"
+LIB="$SHARED/setup/lib.sh"
+[[ -f "$INSTALLER" ]] || fail "install.sh not found on Drive — partial sync? Wait for the green tick on AI Badger Buddy and re-run."
+[[ -s "$INSTALLER" ]] || fail "install.sh is a Drive placeholder, not synced. Toggle 'Available offline' and wait."
+[[ -f "$LIB" ]]       || fail "lib.sh not found on Drive — partial sync? Wait and re-run."
+[[ -s "$LIB" ]]       || fail "lib.sh is a Drive placeholder, not synced. Toggle 'Available offline' and wait."
+ok "Installer + lib found on Drive"
 
 printf '\n%sHanding off to BB:CC installer…%s\n\n' "$BLD" "$NC"
-exec bash "$STAGED" "$@"
+exec bash "$INSTALLER" "$@"
